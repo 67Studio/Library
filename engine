@@ -86,7 +86,7 @@ function Engine.new(options)
 	assert(player, "Engine must run on the client")
 
 	local gui = create("ScreenGui", {
-		Name = options.Name or "MiUI",
+		Name = options.Name or "AuraEngine",
 		ResetOnSpawn = false,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	}, player:WaitForChild("PlayerGui"))
@@ -105,7 +105,7 @@ function Engine.new(options)
 		BackgroundColor3 = COLORS.Accent,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 42),
-		Text = options.Title or "MiUI",
+		Text = options.Title or "Aura Engine",
 		TextColor3 = COLORS.Text,
 		TextSize = 18,
 		Font = Enum.Font.GothamBold,
