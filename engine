@@ -1,0 +1,263 @@
+local Engine = {}
+Engine.__index = Engine
+
+local COLORS = {
+	Background = Color3.fromRGB(17, 22, 32),
+	Panel = Color3.fromRGB(25, 32, 46),
+	PanelLight = Color3.fromRGB(34, 44, 63),
+	Accent = Color3.fromRGB(32, 125, 235),
+	AccentLight = Color3.fromRGB(82, 170, 255),
+	Text = Color3.fromRGB(245, 248, 255),
+	Muted = Color3.fromRGB(165, 177, 198),
+}
+
+local function create(className, properties, parent)
+	local object = Instance.new(className)
+	for property, value in pairs(properties or {}) do
+		object[property] = value
+	end
+	object.Parent = parent
+	return object
+end
+
+local function addCorner(object, radius)
+	create("UICorner", { CornerRadius = UDim.new(0, radius or 8) }, object)
+end
+
+local function addPadding(object, amount)
+	create("UIPadding", {
+		PaddingTop = UDim.new(0, amount),
+		PaddingBottom = UDim.new(0, amount),
+		PaddingLeft = UDim.new(0, amount),
+		PaddingRight = UDim.new(0, amount),
+	}, object)
+end
+
+local function makeDraggable(handle, target)
+	local UserInputService = game:GetService("UserInputService")
+	local dragging = false
+	local dragStart
+	local startPosition
+
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		dragging = true
+		dragStart = input.Position
+		startPosition = target.Position
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if not dragging then
+			return
+		end
+		if input.UserInputType ~= Enum.UserInputType.MouseMovement
+			and input.UserInputType ~= Enum.UserInputType.Touch
+		then
+			return
+		end
+		local delta = input.Position - dragStart
+		target.Position = UDim2.new(
+			startPosition.X.Scale,
+			startPosition.X.Offset + delta.X,
+			startPosition.Y.Scale,
+			startPosition.Y.Offset + delta.Y
+		)
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			dragging = false
+		end
+	end)
+end
+
+local Window = {}
+Window.__index = Window
+
+function Engine.new(options)
+	options = options or {}
+	local player = game:GetService("Players").LocalPlayer
+	assert(player, "Engine must run on the client")
+
+	local gui = create("ScreenGui", {
+		Name = options.Name or "MiUI",
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	}, player:WaitForChild("PlayerGui"))
+
+	local root = create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = COLORS.Background,
+		BorderSizePixel = 0,
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = options.Size or UDim2.fromOffset(520, 360),
+	}, gui)
+	addCorner(root, 10)
+
+	local header = create("TextButton", {
+		AutoButtonColor = false,
+		BackgroundColor3 = COLORS.Accent,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, 42),
+		Text = options.Title or "MiUI",
+		TextColor3 = COLORS.Text,
+		TextSize = 18,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	}, root)
+	addPadding(header, 12)
+	addCorner(header, 10)
+	makeDraggable(header, root)
+
+	local tabBar = create("Frame", {
+		BackgroundColor3 = COLORS.Panel,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 42),
+		Size = UDim2.new(0, 145, 1, -42),
+	}, root)
+	addPadding(tabBar, 8)
+	create("UIListLayout", {
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}, tabBar)
+
+	local content = create("Frame", {
+		BackgroundColor3 = COLORS.Background,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(145, 42),
+		Size = UDim2.new(1, -145, 1, -42),
+	}, root)
+	addPadding(content, 14)
+
+	local window = setmetatable({
+		Gui = gui,
+		Root = root,
+		Content = content,
+		TabBar = tabBar,
+		Tabs = {},
+		ActiveTab = nil,
+	}, Window)
+	return window
+end
+
+function Window:AddTab(name)
+	local button = create("TextButton", {
+		AutoButtonColor = false,
+		BackgroundColor3 = COLORS.PanelLight,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, 34),
+		Text = name,
+		TextColor3 = COLORS.Muted,
+		TextSize = 13,
+		Font = Enum.Font.GothamMedium,
+	}, self.TabBar)
+	addCorner(button, 6)
+
+	local page = create("ScrollingFrame", {
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		ScrollBarThickness = 4,
+		Size = UDim2.fromScale(1, 1),
+		Visible = false,
+	}, self.Content)
+	create("UIListLayout", {
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}, page)
+
+	local tab = { Button = button, Page = page, Sections = {} }
+	table.insert(self.Tabs, tab)
+
+	local function select()
+		for _, other in ipairs(self.Tabs) do
+			other.Page.Visible = false
+			other.Button.BackgroundColor3 = COLORS.PanelLight
+			other.Button.TextColor3 = COLORS.Muted
+		end
+		page.Visible = true
+		button.BackgroundColor3 = COLORS.Accent
+		button.TextColor3 = COLORS.Text
+		self.ActiveTab = tab
+	end
+	button.Activated:Connect(select)
+	if not self.ActiveTab then
+		select()
+	end
+
+	function tab:AddSection(title)
+		local section = create("Frame", {
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = COLORS.Panel,
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 0, 0),
+		}, page)
+		addCorner(section, 8)
+		addPadding(section, 10)
+		create("TextLabel", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 24),
+			Text = title,
+			TextColor3 = COLORS.Text,
+			TextSize = 15,
+			Font = Enum.Font.GothamBold,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		}, section)
+		local controls = create("Frame", {
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(0, 28),
+			Size = UDim2.new(1, 0, 0, 0),
+		}, section)
+		create("UIListLayout", { Padding = UDim.new(0, 6) }, controls)
+
+		local sectionApi = {}
+		function sectionApi:AddButton(text, callback)
+			local button = create("TextButton", {
+				AutoButtonColor = false,
+				BackgroundColor3 = COLORS.PanelLight,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 0, 32),
+				Text = text,
+				TextColor3 = COLORS.Text,
+				TextSize = 13,
+				Font = Enum.Font.GothamMedium,
+			}, controls)
+			addCorner(button, 6)
+			button.Activated:Connect(callback or function() end)
+			return button
+		end
+
+		function sectionApi:AddToggle(text, default, callback)
+			local enabled = default == true
+			local toggle = sectionApi:AddButton(text, function()
+				enabled = not enabled
+				toggle.BackgroundColor3 = enabled and COLORS.Accent or COLORS.PanelLight
+				if callback then callback(enabled) end
+			end)
+			toggle.BackgroundColor3 = enabled and COLORS.Accent or COLORS.PanelLight
+			return toggle
+		end
+
+		table.insert(tab.Sections, sectionApi)
+		return sectionApi
+	end
+
+	return tab
+end
+
+function Window:Destroy()
+	if self.Gui then
+		self.Gui:Destroy()
+		self.Gui = nil
+	end
+end
+
+return Engine
