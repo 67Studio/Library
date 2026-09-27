@@ -12410,6 +12410,192 @@ ApiImpl[106] = function(self, config)
     return window
 end
 
+Runtime[101] = function(optionType)
+    local normalized = string.lower(tostring(optionType or ""))
+    local aliases = {
+        button = 1,
+        dropdown = 2,
+        multidropdown = 3,
+        multi_dropdown = 3,
+        actiondropdown = 4,
+        action_dropdown = 4,
+        actionmultidropdown = 5,
+        action_multi_dropdown = 5,
+        input = 6,
+        text = 7,
+        slider = 8,
+        slidebar = 8,
+        toggle = 9,
+        switch = 9,
+        paragraph = 10,
+        canvas = 11,
+    }
+    local typeCode = aliases[normalized]
+    assert(typeCode, ("Unsupported feature type: %s"):format(tostring(optionType)))
+    return typeCode, normalized
+end
+
+Protected[1] = function()
+    return function() end
+end
+
+Protected[2] = function()
+    return function() end
+end
+
+Protected[3] = function(page)
+    local layout = page:FindFirstChildOfClass("UIListLayout")
+    local function updateCanvas()
+        if layout then
+            page.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y)
+        end
+    end
+    if layout then
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+    end
+    return page, updateCanvas
+end
+
+Protected[4] = function()
+    return function() end
+end
+
+function AuraLibrary:CreateWindow(config)
+    return ApiImpl[106](self, config)
+end
+
+function AuraLibrary:Finalize()
+    if self.Window then
+        return ApiImpl[105](self.Window)
+    end
+end
+
+WindowMethods.CreateTab = function(self, config)
+    return ApiImpl[95](self, config)
+end
+WindowMethods.GetDefaultTab = function(self)
+    return ApiImpl[97](self)
+end
+WindowMethods.CreateState = function(self, config)
+    return ApiImpl[98](self, config)
+end
+WindowMethods.GetState = function(self, name)
+    return ApiImpl[99](self, name)
+end
+WindowMethods.CreateExclusiveGroup = function(self, config)
+    return ApiImpl[100](self, config)
+end
+WindowMethods.GetExclusiveGroup = function(self, name)
+    return ApiImpl[101](self, name)
+end
+WindowMethods.Open = function(self)
+    return ApiImpl[102](self)
+end
+WindowMethods.Close = function(self)
+    return ApiImpl[103](self)
+end
+WindowMethods.Toggle = function(self)
+    return ApiImpl[104](self)
+end
+WindowMethods.Finalize = function(self)
+    return ApiImpl[105](self)
+end
+
+TabMethods.CreateSection = function(self, config)
+    return ApiImpl[90](self, config)
+end
+TabMethods.Select = function(self)
+    return ApiImpl[91](self)
+end
+TabMethods.Destroy = function(self)
+    return ApiImpl[92](self)
+end
+
+SectionMethods.CreateButton = function(self, config)
+    return ApiImpl[86](self, "Button", config)
+end
+SectionMethods.CreateDropdown = function(self, config)
+    return ApiImpl[86](self, "Dropdown", config)
+end
+SectionMethods.CreateMultiDropdown = function(self, config)
+    return ApiImpl[86](self, "MultiDropdown", config)
+end
+SectionMethods.CreateInput = function(self, config)
+    return ApiImpl[86](self, "Input", config)
+end
+SectionMethods.CreateText = function(self, config)
+    return ApiImpl[86](self, "Text", config)
+end
+SectionMethods.CreateLabel = SectionMethods.CreateText
+SectionMethods.CreateSlider = function(self, config)
+    return ApiImpl[86](self, "Slider", config)
+end
+SectionMethods.CreateToggle = function(self, config)
+    return ApiImpl[86](self, "Toggle", config)
+end
+SectionMethods.CreateSwitch = SectionMethods.CreateToggle
+SectionMethods.CreateCanvas = function(self, config)
+    return ApiImpl[86](self, "Canvas", config)
+end
+
+OptionMethods.Get = function(self)
+    return ApiImpl[29](self)
+end
+OptionMethods.Set = function(self, value, fireCallback)
+    return ApiImpl[30](self, value, fireCallback)
+end
+OptionMethods.GetState = function(self)
+    return ApiImpl[31](self)
+end
+OptionMethods.SetState = function(self, state, config)
+    return ApiImpl[32](self, state, config)
+end
+OptionMethods.SetVisible = function(self, visible, animated)
+    return ApiImpl[45](self, visible, animated)
+end
+OptionMethods.IsVisible = function(self)
+    return ApiImpl[46](self)
+end
+OptionMethods.ShowWhen = function(self, source, options)
+    return ApiImpl[47](self, source, options)
+end
+OptionMethods.SubOf = function(self, source)
+    return ApiImpl[48](self, source)
+end
+OptionMethods.GetSubOptions = function(self)
+    return ApiImpl[49](self)
+end
+OptionMethods.GetNote = function(self)
+    return ApiImpl[52](self)
+end
+OptionMethods.SetNote = function(self, value)
+    return ApiImpl[53](self, value)
+end
+OptionMethods.SetOptions = function(self, options, selected, fireCallback)
+    return ApiImpl[54](self, options, selected, fireCallback)
+end
+OptionMethods.GetRange = function(self)
+    return ApiImpl[55](self)
+end
+OptionMethods.SetRange = function(self, minimum, maximum, fireCallback)
+    return ApiImpl[56](self, minimum, maximum, fireCallback)
+end
+OptionMethods.SetMin = function(self, value, fireCallback)
+    return ApiImpl[57](self, value, fireCallback)
+end
+OptionMethods.SetMax = function(self, value, fireCallback)
+    return ApiImpl[58](self, value, fireCallback)
+end
+OptionMethods.Press = function(self)
+    return ApiImpl[81](self)
+end
+OptionMethods.Apply = function(self)
+    return ApiImpl[82](self)
+end
+OptionMethods.Destroy = function(self)
+    return ApiImpl[85](self)
+end
+
 local ENGINE_URL = "https://raw.githubusercontent.com/67Studio/Library/refs/heads/main/engine"
 local engineSource = game:HttpGet(ENGINE_URL)
 local engineLoader, engineError = loadstring(engineSource)
